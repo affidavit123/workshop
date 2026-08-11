@@ -19,6 +19,7 @@ jobs:
           python-version: "3.x"
 
       - name: Run GDP check script
+        id: run_script
         run: python scripts/check_gdp.py
 
       - name: Commit updated state file
@@ -28,3 +29,16 @@ jobs:
           git add mini_state.json
           git diff --staged --quiet || git commit -m "Update mini_state.json"
           git push
+
+      - name: Send email notification
+        if: steps.run_script.outputs.status != 'nochange'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.GMAIL_USERNAME }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "Mongolia GDP Growth Update"
+          to: ${{ secrets.WORK_EMAIL }}
+          from: ${{ secrets.GMAIL_USERNAME }}
+          body: ${{ steps.run_script.outputs.message }}
